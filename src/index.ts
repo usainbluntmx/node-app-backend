@@ -12,6 +12,7 @@ import authRoutes from './routes/auth.routes';
 import protectedRoutes from './routes/protected.routes';
 import brandRoutes from './routes/brand.routes';
 import branchRoutes from './routes/branch.routes';
+import discountRoutes from './routes/discount.routes'; // ✅ Nueva ruta de descuentos
 
 dotenv.config();
 
@@ -29,6 +30,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/protected', protectedRoutes);
 app.use('/api/brands', brandRoutes);
 app.use('/api/branches', branchRoutes);
+app.use('/api/discounts', discountRoutes); // ✅ Montamos la nueva ruta
 
 // Documentación Swagger
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
