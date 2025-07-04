@@ -3,7 +3,7 @@ import { Router } from 'express';
 import {
   createBranch,
   getBranchesByBrand,
-  getBranchById, // nuevo
+  getBranchById,
   updateBranch,
   deleteBranch,
   getAllPublicBranches
@@ -20,13 +20,23 @@ const router = Router();
  *   description: Endpoints para gestión de sucursales (branches)
  */
 
+/**
+ * @swagger
+ * /branches/public:
+ *   get:
+ *     summary: Obtener todas las sucursales públicas (para el mapa)
+ *     tags: [Branches]
+ *     responses:
+ *       200:
+ *         description: Lista de sucursales públicas obtenida correctamente
+ */
 router.get('/public', getAllPublicBranches);
 
 /**
  * @swagger
  * /branches:
  *   post:
- *     summary: Crear una nueva sucursal
+ *     summary: Crear una nueva sucursal (requiere membresía activa)
  *     tags: [Branches]
  *     security:
  *       - bearerAuth: []
@@ -39,8 +49,6 @@ router.get('/public', getAllPublicBranches);
  *             required:
  *               - brand_id
  *               - name
- *               - latitude
- *               - longitude
  *             properties:
  *               brand_id:
  *                 type: integer
@@ -55,6 +63,8 @@ router.get('/public', getAllPublicBranches);
  *     responses:
  *       201:
  *         description: Sucursal creada exitosamente
+ *       403:
+ *         description: Permiso denegado o sin membresía activa
  */
 router.post('/', verifyToken, checkRole('seller'), createBranch);
 
@@ -62,7 +72,7 @@ router.post('/', verifyToken, checkRole('seller'), createBranch);
  * @swagger
  * /branches/{brandId}:
  *   get:
- *     summary: Obtener las sucursales de una marca
+ *     summary: Obtener todas las sucursales de una marca
  *     tags: [Branches]
  *     security:
  *       - bearerAuth: []
@@ -74,7 +84,7 @@ router.post('/', verifyToken, checkRole('seller'), createBranch);
  *           type: integer
  *     responses:
  *       200:
- *         description: Lista de sucursales de la marca
+ *         description: Lista de sucursales obtenida correctamente
  */
 router.get('/:brandId', verifyToken, getBranchesByBrand);
 
@@ -82,7 +92,7 @@ router.get('/:brandId', verifyToken, getBranchesByBrand);
  * @swagger
  * /branches/detail/{id}:
  *   get:
- *     summary: Ver detalle de una sucursal (branch)
+ *     summary: Obtener detalle de una sucursal
  *     tags: [Branches]
  *     parameters:
  *       - name: id
@@ -129,6 +139,10 @@ router.get('/detail/:id', getBranchById);
  *     responses:
  *       200:
  *         description: Sucursal actualizada correctamente
+ *       403:
+ *         description: No autorizado para editar la sucursal
+ *       404:
+ *         description: Sucursal no encontrada
  */
 router.put('/:id', verifyToken, checkRole('seller'), updateBranch);
 
@@ -149,6 +163,10 @@ router.put('/:id', verifyToken, checkRole('seller'), updateBranch);
  *     responses:
  *       200:
  *         description: Sucursal eliminada correctamente
+ *       403:
+ *         description: No autorizado para eliminar la sucursal
+ *       404:
+ *         description: Sucursal no encontrada
  */
 router.delete('/:id', verifyToken, checkRole('seller'), deleteBranch);
 

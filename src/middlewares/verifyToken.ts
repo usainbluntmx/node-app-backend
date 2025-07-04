@@ -4,9 +4,6 @@ import jwt, { JwtPayload } from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'default_secret';
 
-/**
- * Middleware para verificar la validez del token JWT
- */
 export const verifyToken = (req: Request, res: Response, next: NextFunction): void => {
   const authHeader = req.headers.authorization;
 
@@ -20,7 +17,13 @@ export const verifyToken = (req: Request, res: Response, next: NextFunction): vo
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;
 
-    if (!decoded || typeof decoded !== 'object' || !decoded.userId || !decoded.role) {
+    if (
+      !decoded ||
+      typeof decoded !== 'object' ||
+      !('userId' in decoded) ||
+      !('email' in decoded) ||
+      !('role' in decoded)
+    ) {
       res.status(401).json({ message: 'Token inválido' });
       return;
     }
@@ -28,11 +31,12 @@ export const verifyToken = (req: Request, res: Response, next: NextFunction): vo
     req.user = {
       userId: decoded.userId,
       email: decoded.email,
-      role: decoded.role,
+      role: decoded.role
     };
 
     next();
   } catch (error) {
     res.status(403).json({ message: 'Token inválido o expirado' });
+    return;
   }
 };

@@ -8,6 +8,13 @@ const router = Router();
 
 /**
  * @swagger
+ * tags:
+ *   name: Perfil
+ *   description: Endpoints relacionados al perfil del usuario autenticado
+ */
+
+/**
+ * @swagger
  * /me:
  *   get:
  *     summary: Obtener el perfil del usuario autenticado
@@ -20,7 +27,39 @@ const router = Router();
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/User'
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 user:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                     name:
+ *                       type: string
+ *                     email:
+ *                       type: string
+ *                     role:
+ *                       type: string
+ *                       enum: [buyer, seller]
+ *                     birth_date:
+ *                       type: string
+ *                       format: date
+ *                       nullable: true
+ *                     phone:
+ *                       type: string
+ *                       nullable: true
+ *                     referral_code:
+ *                       type: string
+ *                       nullable: true
+ *                     created_at:
+ *                       type: string
+ *                       format: date-time
+ *                     membership_type:
+ *                       type: string
+ *                       nullable: true
+ *                       description: Tipo de membresía activa (si es seller), o null
  */
 router.get('/', verifyToken, asyncHandler(getMyProfile));
 

@@ -16,6 +16,7 @@ import discountRoutes from './routes/discount.routes'; // ✅ Nueva ruta de desc
 import meRoutes from './routes/me.routes';
 import couponRedemptionRoutes from './routes/couponRedemption.routes';
 import userVisitRoutes from './routes/userVisit.routes';
+import sellerProfileRoutes from './routes/sellerProfile.routes';
 
 dotenv.config();
 
@@ -37,6 +38,7 @@ app.use('/api/discounts', discountRoutes); // ✅ Montamos la nueva ruta
 app.use('/api/me', meRoutes);
 app.use('/api/redemptions', couponRedemptionRoutes);
 app.use('/api/visits', userVisitRoutes);
+app.use('/api/seller', sellerProfileRoutes);
 
 // Documentación Swagger
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));

@@ -6,5 +6,6 @@ export interface Branch {
   address?: string;
   latitude?: number;
   longitude?: number;
+  membership_id?: number | null; // 🔗 Nueva relación con membresía
   created_at?: Date;
 }

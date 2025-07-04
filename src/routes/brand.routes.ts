@@ -6,6 +6,7 @@ import {
   getBrandById,
   updateBrand,
   deleteBrand,
+  registerBrandWithBranch,
 } from '../controllers/brand.controller';
 import { verifyToken } from '../middlewares/verifyToken';
 import { checkRole } from '../middlewares/checkRole';
@@ -38,19 +39,69 @@ const router = Router();
  *             properties:
  *               name:
  *                 type: string
+ *               description:
+ *                 type: string
  *               logo_url:
  *                 type: string
  *     responses:
  *       201:
- *         description: Marca creada exitosamente
+ *         description: Marca creada correctamente
+ *       400:
+ *         description: Datos inválidos o faltantes
  */
 router.post('/', verifyToken, checkRole('seller'), createBrand);
 
 /**
  * @swagger
+ * /brands/register-full:
+ *   post:
+ *     summary: Registrar una nueva marca junto con la sucursal inicial
+ *     tags: [Brands]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - branch
+ *             properties:
+ *               name:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               logo_url:
+ *                 type: string
+ *               branch:
+ *                 type: object
+ *                 required:
+ *                   - name
+ *                   - address
+ *                 properties:
+ *                   name:
+ *                     type: string
+ *                   address:
+ *                     type: string
+ *                   latitude:
+ *                     type: number
+ *                   longitude:
+ *                     type: number
+ *     responses:
+ *       201:
+ *         description: Marca y sucursal registradas exitosamente
+ *       400:
+ *         description: Datos faltantes o inválidos
+ */
+router.post('/register-full', verifyToken, checkRole('seller'), registerBrandWithBranch);
+
+/**
+ * @swagger
  * /brands:
  *   get:
- *     summary: Obtener todas las marcas
+ *     summary: Obtener todas las marcas del usuario autenticado
  *     tags: [Brands]
  *     security:
  *       - bearerAuth: []
@@ -73,12 +124,12 @@ router.get('/', verifyToken, checkRole('seller'), getAllBrands);
  *         in: path
  *         required: true
  *         schema:
- *           type: string
+ *           type: integer
  *     responses:
  *       200:
  *         description: Marca encontrada
  *       404:
- *         description: Marca no encontrada
+ *         description: Marca no encontrada o no autorizada
  */
 router.get('/:id', verifyToken, checkRole('seller'), getBrandById);
 
@@ -95,7 +146,7 @@ router.get('/:id', verifyToken, checkRole('seller'), getBrandById);
  *         in: path
  *         required: true
  *         schema:
- *           type: string
+ *           type: integer
  *     requestBody:
  *       content:
  *         application/json:
@@ -104,11 +155,15 @@ router.get('/:id', verifyToken, checkRole('seller'), getBrandById);
  *             properties:
  *               name:
  *                 type: string
+ *               description:
+ *                 type: string
  *               logo_url:
  *                 type: string
  *     responses:
  *       200:
- *         description: Marca actualizada
+ *         description: Marca actualizada correctamente
+ *       404:
+ *         description: Marca no encontrada o no autorizada
  */
 router.put('/:id', verifyToken, checkRole('seller'), updateBrand);
 
@@ -125,10 +180,12 @@ router.put('/:id', verifyToken, checkRole('seller'), updateBrand);
  *         in: path
  *         required: true
  *         schema:
- *           type: string
+ *           type: integer
  *     responses:
  *       200:
- *         description: Marca eliminada
+ *         description: Marca eliminada correctamente
+ *       404:
+ *         description: Marca no encontrada o no autorizada
  */
 router.delete('/:id', verifyToken, checkRole('seller'), deleteBrand);
 
