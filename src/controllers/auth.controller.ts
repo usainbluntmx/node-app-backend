@@ -4,19 +4,21 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import pool from '../config/db';
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
+import { User } from '../models/user.model';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'default_secret';
 
+// Registro de nuevo usuario
 export const registerUser = async (req: Request, res: Response): Promise<Response> => {
   try {
-    const { email, password, name, role = 'buyer' } = req.body;
+    const { email, password, name, role } = req.body as Partial<User>;
 
-    if (!['buyer', 'seller'].includes(role)) {
-      return res.status(400).json({ message: 'Rol inválido' });
+    if (!email || !password || !name || !role) {
+      return res.status(400).json({ message: 'Todos los campos son requeridos: email, password, name y role' });
     }
 
-    if (!email || !password || !name) {
-      return res.status(400).json({ message: 'Email, name y password son requeridos' });
+    if (!['buyer', 'seller'].includes(role)) {
+      return res.status(400).json({ message: 'Rol inválido. Debe ser buyer o seller' });
     }
 
     const [existing] = await pool.query<RowDataPacket[]>('SELECT id FROM users WHERE email = ?', [email]);
@@ -32,27 +34,29 @@ export const registerUser = async (req: Request, res: Response): Promise<Respons
       [name, email, hashedPassword, role]
     );
 
-    const userId = result.insertId;
+    const token = jwt.sign({ userId: result.insertId, email, role }, JWT_SECRET, { expiresIn: '1h' });
 
-    const token = jwt.sign({ userId, email, role }, JWT_SECRET, { expiresIn: '1h' });
-
-    return res.status(201).json({ message: 'Usuario registrado con éxito', token });
+    return res.status(201).json({
+      message: 'Usuario registrado con éxito',
+      token
+    });
   } catch (error) {
     console.error('Error en registerUser:', error);
-    return res.status(500).json({ message: 'Error en el servidor' });
+    return res.status(500).json({ message: 'Error en el servidor al registrar usuario' });
   }
 };
 
+// Inicio de sesión
 export const loginUser = async (req: Request, res: Response): Promise<Response> => {
   try {
-    const { email, password } = req.body;
+    const { email, password } = req.body as { email: string; password: string };
 
     if (!email || !password) {
       return res.status(400).json({ message: 'Email y password son requeridos' });
     }
 
     const [rows] = await pool.query<RowDataPacket[]>('SELECT * FROM users WHERE email = ?', [email]);
-    const users = rows;
+    const users = rows as User[];
 
     if (users.length === 0) {
       return res.status(401).json({ message: 'Credenciales inválidas' });
@@ -83,6 +87,6 @@ export const loginUser = async (req: Request, res: Response): Promise<Response> 
     });
   } catch (error) {
     console.error('Error en loginUser:', error);
-    return res.status(500).json({ message: 'Error en el servidor' });
+    return res.status(500).json({ message: 'Error en el servidor al iniciar sesión' });
   }
 };

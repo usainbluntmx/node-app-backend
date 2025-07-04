@@ -3,8 +3,9 @@ import { Router } from 'express';
 import {
   createDiscount,
   getAllDiscounts,
+  getDiscountById,
+  updateDiscount,
   deleteDiscount,
-  getDiscountById
 } from '../controllers/discount.controller';
 import { verifyToken } from '../middlewares/verifyToken';
 import { checkRole } from '../middlewares/checkRole';
@@ -81,7 +82,6 @@ router.get('/', getAllDiscounts);
  *               type:
  *                 type: string
  *                 enum: [product, service, amount, free]
- *                 example: product
  *               description:
  *                 type: string
  *                 example: "Solo los viernes"
@@ -98,7 +98,7 @@ router.get('/', getAllDiscounts);
  *       201:
  *         description: Descuento creado exitosamente
  *       400:
- *         description: Datos inválidos o faltantes
+ *         description: Datos inválidos
  *       401:
  *         description: No autorizado
  *       500:
@@ -132,6 +132,53 @@ router.get('/:id', getDiscountById);
 /**
  * @swagger
  * /discounts/{id}:
+ *   put:
+ *     summary: Actualizar un descuento por ID
+ *     tags: [Discounts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID del descuento a actualizar
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *               type:
+ *                 type: string
+ *                 enum: [product, service, amount, free]
+ *               description:
+ *                 type: string
+ *               value:
+ *                 type: number
+ *               min_purchase:
+ *                 type: number
+ *               product_or_service_name:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Descuento actualizado correctamente
+ *       404:
+ *         description: Descuento no encontrado
+ *       401:
+ *         description: No autorizado
+ *       500:
+ *         description: Error interno del servidor
+ */
+router.put('/:id', verifyToken, checkRole('seller'), updateDiscount);
+
+/**
+ * @swagger
+ * /discounts/{id}:
  *   delete:
  *     summary: Eliminar (lógicamente) un descuento por ID
  *     tags: [Discounts]
@@ -141,9 +188,9 @@ router.get('/:id', getDiscountById);
  *       - in: path
  *         name: id
  *         required: true
- *         description: ID del descuento a eliminar
  *         schema:
  *           type: integer
+ *         description: ID del descuento a eliminar
  *     responses:
  *       200:
  *         description: Descuento eliminado lógicamente

@@ -3,6 +3,7 @@ import { Router } from 'express';
 import {
   createBranch,
   getBranchesByBrand,
+  getBranchById, // nuevo
   updateBranch,
   deleteBranch,
   getAllPublicBranches
@@ -19,16 +20,6 @@ const router = Router();
  *   description: Endpoints para gestión de sucursales (branches)
  */
 
-/**
- * @swagger
- * /branches/public:
- *   get:
- *     summary: Obtener todas las sucursales públicas (para Google Maps)
- *     tags: [Branches]
- *     responses:
- *       200:
- *         description: Lista de sucursales públicas
- */
 router.get('/public', getAllPublicBranches);
 
 /**
@@ -46,14 +37,16 @@ router.get('/public', getAllPublicBranches);
  *           schema:
  *             type: object
  *             required:
- *               - brandId
+ *               - brand_id
  *               - name
  *               - latitude
  *               - longitude
  *             properties:
- *               brandId:
- *                 type: string
+ *               brand_id:
+ *                 type: integer
  *               name:
+ *                 type: string
+ *               address:
  *                 type: string
  *               latitude:
  *                 type: number
@@ -78,14 +71,32 @@ router.post('/', verifyToken, checkRole('seller'), createBranch);
  *         in: path
  *         required: true
  *         schema:
- *           type: string
+ *           type: integer
  *     responses:
  *       200:
  *         description: Lista de sucursales de la marca
- *       404:
- *         description: Marca no encontrada o sin sucursales
  */
 router.get('/:brandId', verifyToken, getBranchesByBrand);
+
+/**
+ * @swagger
+ * /branches/detail/{id}:
+ *   get:
+ *     summary: Ver detalle de una sucursal (branch)
+ *     tags: [Branches]
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Detalle de sucursal encontrado
+ *       404:
+ *         description: Sucursal no encontrada
+ */
+router.get('/detail/:id', getBranchById);
 
 /**
  * @swagger
@@ -100,7 +111,7 @@ router.get('/:brandId', verifyToken, getBranchesByBrand);
  *         in: path
  *         required: true
  *         schema:
- *           type: string
+ *           type: integer
  *     requestBody:
  *       content:
  *         application/json:
@@ -109,6 +120,8 @@ router.get('/:brandId', verifyToken, getBranchesByBrand);
  *             properties:
  *               name:
  *                 type: string
+ *               address:
+ *                 type: string
  *               latitude:
  *                 type: number
  *               longitude:
@@ -116,8 +129,6 @@ router.get('/:brandId', verifyToken, getBranchesByBrand);
  *     responses:
  *       200:
  *         description: Sucursal actualizada correctamente
- *       404:
- *         description: Sucursal no encontrada
  */
 router.put('/:id', verifyToken, checkRole('seller'), updateBranch);
 
@@ -134,12 +145,10 @@ router.put('/:id', verifyToken, checkRole('seller'), updateBranch);
  *         in: path
  *         required: true
  *         schema:
- *           type: string
+ *           type: integer
  *     responses:
  *       200:
  *         description: Sucursal eliminada correctamente
- *       404:
- *         description: Sucursal no encontrada
  */
 router.delete('/:id', verifyToken, checkRole('seller'), deleteBranch);
 

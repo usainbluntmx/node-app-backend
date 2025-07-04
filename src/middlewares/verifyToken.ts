@@ -1,15 +1,17 @@
 // src/middlewares/verifyToken.ts
-import { Response, NextFunction } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import jwt, { JwtPayload } from 'jsonwebtoken';
-import { AuthRequest } from '../types/express'; // usa el tipo global
 
 const JWT_SECRET = process.env.JWT_SECRET || 'default_secret';
 
-export const verifyToken = (req: AuthRequest, res: Response, next: NextFunction): void => {
+/**
+ * Middleware para verificar la validez del token JWT
+ */
+export const verifyToken = (req: Request, res: Response, next: NextFunction): void => {
   const authHeader = req.headers.authorization;
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    res.status(401).json({ message: 'Token inválido o ausente' });
+  if (!authHeader?.startsWith('Bearer ')) {
+    res.status(401).json({ message: 'Token ausente o mal formado' });
     return;
   }
 

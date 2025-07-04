@@ -1,126 +1,166 @@
 // src/controllers/branch.controller.ts
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
+import { ResultSetHeader, RowDataPacket } from 'mysql2';
 import pool from '../config/db';
+import { Branch } from '../models/branch.model';
+import { asyncHandler } from '../middlewares/asyncHandler';
 
-// Crear una sucursal
-export const createBranch = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { brand_id, name, address, latitude, longitude } = req.body;
-    const userId = (req as any).user?.userId;
+// Crear una sucursal (verifica propiedad de la marca)
+export const createBranch = asyncHandler(async (req: Request, res: Response): Promise<Response> => {
+  const { brand_id, name, address, latitude, longitude } = req.body as Branch;
+  const ownerId = req.user?.userId;
 
-    // Verifica que el usuario es el dueño de la marca
-    const [brands] = await pool.query(
-      'SELECT * FROM brands WHERE id = ? AND owner_id = ?',
-      [brand_id, userId]
-    );
+  const [brands] = await pool.query<RowDataPacket[]>(
+    'SELECT id FROM brands WHERE id = ? AND owner_id = ?',
+    [brand_id, ownerId]
+  );
 
-    if ((brands as any[]).length === 0) {
-      res.status(403).json({ message: 'No tienes permiso para agregar sucursales a esta marca' });
-      return;
+  if (brands.length === 0) {
+    return res.status(403).json({ message: 'No tienes permiso para agregar sucursales a esta marca' });
+  }
+
+  const [result] = await pool.query<ResultSetHeader>(
+    'INSERT INTO branches (brand_id, name, address, latitude, longitude) VALUES (?, ?, ?, ?, ?)',
+    [brand_id, name, address ?? null, latitude ?? null, longitude ?? null]
+  );
+
+  return res.status(201).json({
+    message: 'Sucursal creada con éxito',
+    data: {
+      id: result.insertId,
+      brand_id,
+      name,
+      address,
+      latitude,
+      longitude
     }
+  });
+});
 
-    const [result] = await pool.query(
-      'INSERT INTO branches (brand_id, name, address, latitude, longitude) VALUES (?, ?, ?, ?, ?)',
-      [brand_id, name, address, latitude, longitude]
-    );
+// Obtener sucursales de una marca específica
+export const getBranchesByBrand = asyncHandler(async (req: Request, res: Response): Promise<Response> => {
+  const { brandId } = req.params;
 
-    res.status(201).json({
-      message: 'Sucursal creada con éxito',
-      branchId: (result as any).insertId
-    });
-  } catch (error) {
-    console.error('Error al crear sucursal:', error);
-    res.status(500).json({ message: 'Error del servidor' });
+  const [branches] = await pool.query<RowDataPacket[]>(
+    'SELECT * FROM branches WHERE brand_id = ?',
+    [brandId]
+  );
+
+  return res.status(200).json({
+    message: 'Sucursales encontradas',
+    data: branches as Branch[]
+  });
+});
+
+// Actualizar una sucursal (verificando propiedad)
+export const updateBranch = asyncHandler(async (req: Request, res: Response): Promise<Response> => {
+  const { id } = req.params;
+  const { name, address, latitude, longitude } = req.body as Partial<Branch>;
+  const ownerId = req.user?.userId;
+
+  const [rows] = await pool.query<RowDataPacket[]>(
+    `SELECT b.id FROM branches b
+     JOIN brands br ON b.brand_id = br.id
+     WHERE b.id = ? AND br.owner_id = ?`,
+    [id, ownerId]
+  );
+
+  if (rows.length === 0) {
+    return res.status(403).json({ message: 'No tienes permiso para editar esta sucursal' });
   }
-};
 
-// Obtener las sucursales por el brandId (privado)
-export const getBranchesByBrand = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { brandId } = req.params;
-    const [branches] = await pool.query('SELECT * FROM branches WHERE brand_id = ?', [brandId]);
-    res.status(200).json(branches);
-  } catch (error) {
-    console.error('Error al obtener sucursales:', error);
-    res.status(500).json({ message: 'Error del servidor' });
+  await pool.query(
+    'UPDATE branches SET name = ?, address = ?, latitude = ?, longitude = ? WHERE id = ?',
+    [name, address ?? null, latitude ?? null, longitude ?? null, id]
+  );
+
+  return res.status(200).json({ message: 'Sucursal actualizada con éxito' });
+});
+
+// Eliminar una sucursal (verificando propiedad)
+export const deleteBranch = asyncHandler(async (req: Request, res: Response): Promise<Response> => {
+  const { id } = req.params;
+  const ownerId = req.user?.userId;
+
+  const [rows] = await pool.query<RowDataPacket[]>(
+    `SELECT b.id FROM branches b
+     JOIN brands br ON b.brand_id = br.id
+     WHERE b.id = ? AND br.owner_id = ?`,
+    [id, ownerId]
+  );
+
+  if (rows.length === 0) {
+    return res.status(403).json({ message: 'No tienes permiso para eliminar esta sucursal' });
   }
-};
 
-// Editar la sucursal
-export const updateBranch = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { id } = req.params;
-    const { name, address, latitude, longitude } = req.body;
-    const userId = (req as any).user?.userId;
+  await pool.query('DELETE FROM branches WHERE id = ?', [id]);
 
-    const [branchRows] = await pool.query(
-      `SELECT b.id FROM branches b
-       JOIN brands br ON b.brand_id = br.id
-       WHERE b.id = ? AND br.owner_id = ?`,
-      [id, userId]
-    );
+  return res.status(200).json({ message: 'Sucursal eliminada con éxito' });
+});
 
-    if ((branchRows as any[]).length === 0) {
-      res.status(403).json({ message: 'No tienes permiso para editar esta sucursal' });
-      return;
+// Obtener todas las sucursales públicas estructuradas (para mapas)
+export const getAllPublicBranches = asyncHandler(async (_req: Request, res: Response): Promise<Response> => {
+  const [branches] = await pool.query<RowDataPacket[]>(`
+    SELECT 
+      b.id AS branch_id,
+      b.name AS branch_name,
+      b.address,
+      b.latitude,
+      b.longitude,
+      br.id AS brand_id,
+      br.name AS brand_name,
+      br.logo_url
+    FROM branches b
+    JOIN brands br ON b.brand_id = br.id
+  `);
+
+  const formatted = branches.map(branch => ({
+    id: branch.branch_id,
+    name: branch.branch_name,
+    address: branch.address,
+    latitude: branch.latitude,
+    longitude: branch.longitude,
+    brand: {
+      id: branch.brand_id,
+      name: branch.brand_name,
+      logo_url: branch.logo_url
     }
+  }));
 
-    await pool.query(
-      `UPDATE branches SET name = ?, address = ?, latitude = ?, longitude = ? WHERE id = ?`,
-      [name, address, latitude, longitude, id]
-    );
+  return res.status(200).json({
+    message: 'Sucursales públicas cargadas correctamente',
+    data: formatted
+  });
+});
 
-    res.status(200).json({ message: 'Sucursal actualizada con éxito' });
-  } catch (error) {
-    console.error('Error al actualizar sucursal:', error);
-    res.status(500).json({ message: 'Error del servidor' });
+// ✅ Nuevo controlador: obtener detalle de una sucursal específica
+export const getBranchById = asyncHandler(async (req: Request, res: Response): Promise<Response> => {
+  const { id } = req.params;
+
+  const [rows] = await pool.query<RowDataPacket[]>(
+    `SELECT 
+      b.id AS branch_id,
+      b.name AS branch_name,
+      b.address,
+      b.latitude,
+      b.longitude,
+      br.id AS brand_id,
+      br.name AS brand_name,
+      br.logo_url
+    FROM branches b
+    JOIN brands br ON b.brand_id = br.id
+    WHERE b.id = ?`,
+    [id]
+  );
+
+  if (rows.length === 0) {
+    return res.status(404).json({ message: 'Sucursal no encontrada' });
   }
-};
 
-// Eliminar la sucursal
-export const deleteBranch = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { id } = req.params;
-    const userId = (req as any).user?.userId;
-
-    const [branchRows] = await pool.query(
-      `SELECT b.id FROM branches b
-       JOIN brands br ON b.brand_id = br.id
-       WHERE b.id = ? AND br.owner_id = ?`,
-      [id, userId]
-    );
-
-    if ((branchRows as any[]).length === 0) {
-      res.status(403).json({ message: 'No tienes permiso para eliminar esta sucursal' });
-      return;
-    }
-
-    await pool.query('DELETE FROM branches WHERE id = ?', [id]);
-    res.status(200).json({ message: 'Sucursal eliminada con éxito' });
-  } catch (error) {
-    console.error('Error al eliminar sucursal:', error);
-    res.status(500).json({ message: 'Error del servidor' });
-  }
-};
-
-// Obtener todas las sucursales publicas para el mapa (en formato estructurado)
-export const getAllPublicBranches = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const [branches] = await pool.query(`
-      SELECT 
-        b.id AS branch_id,
-        b.name AS branch_name,
-        b.address,
-        b.latitude,
-        b.longitude,
-        br.id AS brand_id,
-        br.name AS brand_name,
-        br.logo_url
-      FROM branches b
-      JOIN brands br ON b.brand_id = br.id
-    `);
-
-    const formatted = (branches as any[]).map(branch => ({
+  const branch = rows[0];
+  return res.status(200).json({
+    message: 'Detalle de sucursal',
+    data: {
       id: branch.branch_id,
       name: branch.branch_name,
       address: branch.address,
@@ -131,11 +171,6 @@ export const getAllPublicBranches = async (req: Request, res: Response): Promise
         name: branch.brand_name,
         logo_url: branch.logo_url
       }
-    }));
-
-    res.status(200).json(formatted);
-  } catch (error) {
-    console.error('Error al obtener sucursales públicas:', error);
-    res.status(500).json({ message: 'Error al obtener sucursales públicas' });
-  }
-};
+    }
+  });
+});

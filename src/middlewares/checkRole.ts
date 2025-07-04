@@ -1,11 +1,18 @@
 // src/middlewares/checkRole.ts
-import { Response, NextFunction } from 'express';
-import { AuthRequest } from '../types/express';
+import { Request, Response, NextFunction } from 'express';
 
+/**
+ * Middleware para validar el rol del usuario autenticado
+ */
 export const checkRole = (role: 'buyer' | 'seller') => {
-  return (req: AuthRequest, res: Response, next: NextFunction): void => {
-    if (!req.user || req.user.role !== role) {
-      res.status(403).json({ message: 'Acceso denegado. Usuario no autorizado.' });
+  return (req: Request, res: Response, next: NextFunction): void => {
+    if (!req.user) {
+      res.status(401).json({ message: 'No autenticado' });
+      return;
+    }
+
+    if (req.user.role !== role) {
+      res.status(403).json({ message: `Acceso denegado. Rol requerido: ${role}` });
       return;
     }
 

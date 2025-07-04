@@ -2,12 +2,12 @@
 import { Request, Response, NextFunction, RequestHandler } from 'express';
 
 /**
- * Envuelve un controlador asincrono para capturar errores y evitar romper el tipado de Express
+ * Envuelve un controlador async y captura errores automáticamente
  */
 export const asyncHandler = (
-  fn: (req: Request, res: Response, next: NextFunction) => Promise<Response>
+  fn: (req: Request, res: Response, next: NextFunction) => Promise<any>
 ): RequestHandler => {
   return (req, res, next) => {
-    fn(req, res, next).catch(next);
+    Promise.resolve(fn(req, res, next)).catch(next);
   };
 };
