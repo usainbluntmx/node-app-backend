@@ -7,7 +7,16 @@ import { asyncHandler } from '../middlewares/asyncHandler';
 
 // Crear una nueva marca
 export const createBrand = asyncHandler(async (req: Request, res: Response): Promise<Response> => {
-  const { name, description, logo_url } = req.body as Brand;
+  const {
+    name,
+    description,
+    logo_url,
+    business_type,
+    business_size,
+    website,
+    social_links
+  } = req.body as Brand;
+
   const ownerId = req.user?.userId;
 
   if (!name || !ownerId) {
@@ -15,8 +24,17 @@ export const createBrand = asyncHandler(async (req: Request, res: Response): Pro
   }
 
   const [result] = await pool.query<ResultSetHeader>(
-    'INSERT INTO brands (name, description, logo_url, owner_id) VALUES (?, ?, ?, ?)',
-    [name, description ?? null, logo_url ?? null, ownerId]
+    'INSERT INTO brands (name, description, logo_url, owner_id, business_type, business_size, website, social_links) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    [
+      name,
+      description ?? null,
+      logo_url ?? null,
+      ownerId,
+      business_type ?? null,
+      business_size ?? null,
+      website ?? null,
+      social_links ? JSON.stringify(social_links) : null
+    ]
   );
 
   return res.status(201).json({
@@ -26,7 +44,11 @@ export const createBrand = asyncHandler(async (req: Request, res: Response): Pro
       name,
       description: description ?? null,
       logo_url: logo_url ?? null,
-      owner_id: ownerId
+      owner_id: ownerId,
+      business_type: business_type ?? null,
+      business_size: business_size ?? null,
+      website: website ?? null,
+      social_links: social_links ?? []
     }
   });
 });
@@ -42,7 +64,10 @@ export const getAllBrands = asyncHandler(async (req: Request, res: Response): Pr
 
   return res.status(200).json({
     message: 'Marcas encontradas',
-    data: brands as Brand[]
+    data: (brands as Brand[]).map(brand => ({
+      ...brand,
+      social_links: brand.social_links ?? []
+    }))
   });
 });
 
@@ -60,16 +85,29 @@ export const getBrandById = asyncHandler(async (req: Request, res: Response): Pr
     return res.status(404).json({ message: 'Marca no encontrada o no autorizada' });
   }
 
+  const brand = brands[0] as Brand;
   return res.status(200).json({
     message: 'Marca encontrada',
-    data: brands[0] as Brand
+    data: {
+      ...brand,
+      social_links: brand.social_links ?? []
+    }
   });
 });
 
 // Actualizar una marca
 export const updateBrand = asyncHandler(async (req: Request, res: Response): Promise<Response> => {
   const { id } = req.params;
-  const { name, description, logo_url } = req.body as Partial<Brand>;
+  const {
+    name,
+    description,
+    logo_url,
+    business_type,
+    business_size,
+    website,
+    social_links
+  } = req.body as Partial<Brand>;
+
   const ownerId = req.user?.userId;
 
   const [brands] = await pool.query<RowDataPacket[]>(
@@ -81,18 +119,34 @@ export const updateBrand = asyncHandler(async (req: Request, res: Response): Pro
     return res.status(404).json({ message: 'Marca no encontrada o no autorizada' });
   }
 
+  const current = brands[0];
+
   await pool.query(
-    'UPDATE brands SET name = ?, description = ?, logo_url = ? WHERE id = ? AND owner_id = ?',
-    [name ?? brands[0].name, description ?? brands[0].description, logo_url ?? brands[0].logo_url, id, ownerId]
+    'UPDATE brands SET name = ?, description = ?, logo_url = ?, business_type = ?, business_size = ?, website = ?, social_links = ? WHERE id = ? AND owner_id = ?',
+    [
+      name ?? current.name,
+      description ?? current.description,
+      logo_url ?? current.logo_url,
+      business_type ?? current.business_type,
+      business_size ?? current.business_size,
+      website ?? current.website,
+      social_links ? JSON.stringify(social_links) : current.social_links,
+      id,
+      ownerId
+    ]
   );
 
   return res.status(200).json({
     message: 'Marca actualizada correctamente',
     data: {
       id,
-      name: name ?? brands[0].name,
-      description: description ?? brands[0].description,
-      logo_url: logo_url ?? brands[0].logo_url
+      name: name ?? current.name,
+      description: description ?? current.description,
+      logo_url: logo_url ?? current.logo_url,
+      business_type: business_type ?? current.business_type,
+      business_size: business_size ?? current.business_size,
+      website: website ?? current.website,
+      social_links: social_links ?? JSON.parse(current.social_links || '[]')
     }
   });
 });
@@ -116,7 +170,17 @@ export const deleteBrand = asyncHandler(async (req: Request, res: Response): Pro
 
 // Registrar marca con sucursal inicial
 export const registerBrandWithBranch = asyncHandler(async (req: Request, res: Response): Promise<Response> => {
-  const { name, description, logo_url, branch } = req.body;
+  const {
+    name,
+    description,
+    logo_url,
+    business_type,
+    business_size,
+    website,
+    social_links,
+    branch
+  } = req.body;
+
   const ownerId = req.user?.userId;
 
   if (!name || !branch?.name || !branch?.address) {
@@ -124,8 +188,17 @@ export const registerBrandWithBranch = asyncHandler(async (req: Request, res: Re
   }
 
   const [brandResult] = await pool.query<ResultSetHeader>(
-    'INSERT INTO brands (name, description, logo_url, owner_id) VALUES (?, ?, ?, ?)',
-    [name, description ?? null, logo_url ?? null, ownerId]
+    'INSERT INTO brands (name, description, logo_url, owner_id, business_type, business_size, website, social_links) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    [
+      name,
+      description ?? null,
+      logo_url ?? null,
+      ownerId,
+      business_type ?? null,
+      business_size ?? null,
+      website ?? null,
+      social_links ? JSON.stringify(social_links) : null
+    ]
   );
 
   const brandId = brandResult.insertId;

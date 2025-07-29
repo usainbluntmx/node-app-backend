@@ -43,6 +43,16 @@ const router = Router();
  *                 type: string
  *               logo_url:
  *                 type: string
+ *               business_type:
+ *                 type: string
+ *               business_size:
+ *                 type: string
+ *               website:
+ *                 type: string
+ *               social_links:
+ *                 type: array
+ *                 items:
+ *                   type: string
  *     responses:
  *       201:
  *         description: Marca creada correctamente
@@ -75,6 +85,16 @@ router.post('/', verifyToken, checkRole('seller'), createBrand);
  *                 type: string
  *               logo_url:
  *                 type: string
+ *               business_type:
+ *                 type: string
+ *               business_size:
+ *                 type: string
+ *               website:
+ *                 type: string
+ *               social_links:
+ *                 type: array
+ *                 items:
+ *                   type: string
  *               branch:
  *                 type: object
  *                 required:
@@ -159,6 +179,16 @@ router.get('/:id', verifyToken, checkRole('seller'), getBrandById);
  *                 type: string
  *               logo_url:
  *                 type: string
+ *               business_type:
+ *                 type: string
+ *               business_size:
+ *                 type: string
+ *               website:
+ *                 type: string
+ *               social_links:
+ *                 type: array
+ *                 items:
+ *                   type: string
  *     responses:
  *       200:
  *         description: Marca actualizada correctamente

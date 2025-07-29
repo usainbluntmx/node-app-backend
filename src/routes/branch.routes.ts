@@ -60,6 +60,20 @@ router.get('/public', getAllPublicBranches);
  *                 type: number
  *               longitude:
  *                 type: number
+ *               services:
+ *                 type: string
+ *               average_spend:
+ *                 type: number
+ *               phone:
+ *                 type: string
+ *               website:
+ *                 type: string
+ *               opening_hours:
+ *                 type: string
+ *               images:
+ *                 type: array
+ *                 items:
+ *                   type: string
  *     responses:
  *       201:
  *         description: Sucursal creada exitosamente
@@ -136,6 +150,20 @@ router.get('/detail/:id', getBranchById);
  *                 type: number
  *               longitude:
  *                 type: number
+ *               services:
+ *                 type: string
+ *               average_spend:
+ *                 type: number
+ *               phone:
+ *                 type: string
+ *               website:
+ *                 type: string
+ *               opening_hours:
+ *                 type: string
+ *               images:
+ *                 type: array
+ *                 items:
+ *                   type: string
  *     responses:
  *       200:
  *         description: Sucursal actualizada correctamente

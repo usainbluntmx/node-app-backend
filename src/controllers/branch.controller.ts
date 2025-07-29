@@ -7,7 +7,20 @@ import { asyncHandler } from '../middlewares/asyncHandler';
 
 // Crear una sucursal
 export const createBranch = asyncHandler(async (req: Request, res: Response): Promise<Response> => {
-  const { brand_id, name, address, latitude, longitude } = req.body as Branch;
+  const {
+    brand_id,
+    name,
+    address,
+    latitude,
+    longitude,
+    services,
+    average_spend,
+    phone,
+    website,
+    opening_hours,
+    images
+  } = req.body as Branch;
+
   const ownerId = req.user?.userId;
 
   const [brandRows] = await pool.query<RowDataPacket[]>(
@@ -29,8 +42,22 @@ export const createBranch = asyncHandler(async (req: Request, res: Response): Pr
   const membershipId = membershipRows[0].id;
 
   const [result] = await pool.query<ResultSetHeader>(
-    'INSERT INTO branches (brand_id, membership_id, name, address, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?)',
-    [brand_id, membershipId, name, address ?? null, latitude ?? null, longitude ?? null]
+    `INSERT INTO branches (brand_id, membership_id, name, address, latitude, longitude, services, average_spend, phone, website, opening_hours, images)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      brand_id,
+      membershipId,
+      name,
+      address ?? null,
+      latitude ?? null,
+      longitude ?? null,
+      services ?? null,
+      average_spend ?? null,
+      phone ?? null,
+      website ?? null,
+      opening_hours ?? null,
+      JSON.stringify(images ?? [])
+    ]
   );
 
   return res.status(201).json({
@@ -42,7 +69,13 @@ export const createBranch = asyncHandler(async (req: Request, res: Response): Pr
       name,
       address,
       latitude,
-      longitude
+      longitude,
+      services,
+      average_spend,
+      phone,
+      website,
+      opening_hours,
+      images
     }
   });
 });
@@ -73,6 +106,12 @@ export const getBranchById = asyncHandler(async (req: Request, res: Response): P
       b.address,
       b.latitude,
       b.longitude,
+      b.services,
+      b.average_spend,
+      b.phone,
+      b.website,
+      b.opening_hours,
+      b.images,
       br.id AS brand_id,
       br.name AS brand_name,
       br.logo_url
@@ -95,6 +134,12 @@ export const getBranchById = asyncHandler(async (req: Request, res: Response): P
       address: branch.address,
       latitude: branch.latitude,
       longitude: branch.longitude,
+      services: branch.services,
+      average_spend: branch.average_spend,
+      phone: branch.phone,
+      website: branch.website,
+      opening_hours: branch.opening_hours,
+      images: JSON.parse(branch.images || '[]'),
       brand: {
         id: branch.brand_id,
         name: branch.brand_name,
@@ -142,7 +187,18 @@ export const getAllPublicBranches = asyncHandler(async (_req: Request, res: Resp
 // Actualizar una sucursal
 export const updateBranch = asyncHandler(async (req: Request, res: Response): Promise<Response> => {
   const { id } = req.params;
-  const { name, address, latitude, longitude } = req.body as Partial<Branch>;
+  const {
+    name,
+    address,
+    latitude,
+    longitude,
+    services,
+    average_spend,
+    phone,
+    website,
+    opening_hours,
+    images
+  } = req.body as Partial<Branch>;
   const ownerId = req.user?.userId;
 
   const [rows] = await pool.query<RowDataPacket[]>(
@@ -157,8 +213,31 @@ export const updateBranch = asyncHandler(async (req: Request, res: Response): Pr
   }
 
   await pool.query(
-    'UPDATE branches SET name = ?, address = ?, latitude = ?, longitude = ? WHERE id = ?',
-    [name, address ?? null, latitude ?? null, longitude ?? null, id]
+    `UPDATE branches SET 
+      name = ?, 
+      address = ?, 
+      latitude = ?, 
+      longitude = ?, 
+      services = ?, 
+      average_spend = ?, 
+      phone = ?, 
+      website = ?, 
+      opening_hours = ?, 
+      images = ? 
+     WHERE id = ?`,
+    [
+      name ?? null,
+      address ?? null,
+      latitude ?? null,
+      longitude ?? null,
+      services ?? null,
+      average_spend ?? null,
+      phone ?? null,
+      website ?? null,
+      opening_hours ?? null,
+      JSON.stringify(images ?? []),
+      id
+    ]
   );
 
   return res.status(200).json({ message: 'Sucursal actualizada con éxito' });

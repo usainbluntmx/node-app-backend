@@ -17,6 +17,7 @@ import meRoutes from './routes/me.routes';
 import couponRedemptionRoutes from './routes/couponRedemption.routes';
 import userVisitRoutes from './routes/userVisit.routes';
 import sellerProfileRoutes from './routes/sellerProfile.routes';
+import pointHistoryRoutes from './routes/pointHistory.routes';
 
 dotenv.config();
 
@@ -39,6 +40,7 @@ app.use('/api/me', meRoutes);
 app.use('/api/redemptions', couponRedemptionRoutes);
 app.use('/api/visits', userVisitRoutes);
 app.use('/api/seller', sellerProfileRoutes);
+app.use('/points', pointHistoryRoutes);
 
 // Documentación Swagger
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
