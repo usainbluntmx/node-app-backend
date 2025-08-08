@@ -42,10 +42,14 @@ const router = Router();
  *                       type: string
  *                     role:
  *                       type: string
- *                       enum: [buyer, seller]
+ *                       enum: [buyer, seller, admin]
  *                     birth_date:
  *                       type: string
  *                       format: date
+ *                       nullable: true
+ *                     gender:
+ *                       type: string
+ *                       enum: [male, female, other]
  *                       nullable: true
  *                     phone:
  *                       type: string
@@ -53,6 +57,10 @@ const router = Router();
  *                     referral_code:
  *                       type: string
  *                       nullable: true
+ *                     qr:
+ *                       type: string
+ *                       nullable: true
+ *                       description: Información QR personalizada del usuario
  *                     created_at:
  *                       type: string
  *                       format: date-time

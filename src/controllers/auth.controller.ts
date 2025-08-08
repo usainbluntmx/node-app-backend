@@ -1,4 +1,4 @@
-// src/controllers/auth.controller.ts
+// usr/controllers/auth.controller.ts
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
@@ -31,11 +31,13 @@ export const registerUser = async (req: Request, res: Response): Promise<Respons
       role,
       birth_date,
       phone,
-      referral_code
+      referral_code,
+      genero,
+      qr
     } = req.body as Partial<User>;
 
     if (!email || !password || !name || !role) {
-      return res.status(400).json({ message: 'Todos los campos son requeridos: email, password, name y role' });
+      return res.status(400).json({ message: 'Faltan campos requeridos: email, password, name y role' });
     }
 
     if (!['buyer', 'seller'].includes(role)) {
@@ -51,8 +53,8 @@ export const registerUser = async (req: Request, res: Response): Promise<Respons
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const [result] = await pool.query<ResultSetHeader>(
-      `INSERT INTO users (name, email, password, role, birth_date, phone, referral_code)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO users (name, email, password, role, birth_date, phone, referral_code, gender, qr)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         name,
         email,
@@ -60,7 +62,9 @@ export const registerUser = async (req: Request, res: Response): Promise<Respons
         role,
         birth_date || null,
         phone || null,
-        referral_code || null
+        referral_code || null,
+        genero || null,
+        qr || null
       ]
     );
 
@@ -83,7 +87,7 @@ export const registerUser = async (req: Request, res: Response): Promise<Respons
   }
 };
 
-// Inicio de sesión
+// Login
 export const loginUser = async (req: Request, res: Response): Promise<Response> => {
   try {
     const { email, password } = req.body as { email: string; password: string };
@@ -100,8 +104,13 @@ export const loginUser = async (req: Request, res: Response): Promise<Response> 
     }
 
     const user = users[0];
-    const passwordMatch = await bcrypt.compare(password, user.password);
 
+    // Validación segura
+    if (!user.password) {
+      return res.status(500).json({ message: 'El usuario no tiene contraseña registrada' });
+    }
+
+    const passwordMatch = await bcrypt.compare(password, user.password);
     if (!passwordMatch) {
       return res.status(401).json({ message: 'Credenciales inválidas' });
     }
@@ -139,6 +148,8 @@ export const loginUser = async (req: Request, res: Response): Promise<Response> 
         birth_date: user.birth_date,
         phone: user.phone,
         referral_code: user.referral_code,
+        gender: user.genero,
+        qr: user.qr,
         membership_type
       }
     });
@@ -171,7 +182,7 @@ export const refreshToken = async (req: Request, res: Response): Promise<Respons
   }
 };
 
-// Logout (revocar refresh token)
+// Logout
 export const logoutUser = async (req: Request, res: Response): Promise<Response> => {
   const { token } = req.body as { token: string };
   if (!token) return res.status(400).json({ message: 'Token requerido para cerrar sesión' });

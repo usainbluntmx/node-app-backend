@@ -1,8 +1,9 @@
 // src/controllers/me.controller.ts
 import { Request, Response } from 'express';
 import pool from '../config/db';
-import { RowDataPacket } from 'mysql2';
+import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import { User } from '../models/user.model';
+import bcrypt from 'bcryptjs';
 
 /**
  * GET /me - Retorna el perfil del usuario autenticado
@@ -45,6 +46,8 @@ export const getMyProfile = async (req: Request, res: Response): Promise<Respons
       birth_date: user.birth_date,
       phone: user.phone,
       referral_code: user.referral_code,
+      gender: user.genero,
+      qr: user.qr,
       created_at: user.created_at,
       membership_type
     }
@@ -52,13 +55,20 @@ export const getMyProfile = async (req: Request, res: Response): Promise<Respons
 };
 
 /**
- * PUT /me - Permite al usuario actualizar su nombre y/o contraseña
+ * PUT /me - Permite al usuario actualizar su perfil (nombre, teléfono, fecha de nacimiento, género, QR o contraseña)
  */
 export const updateMyProfile = async (req: Request, res: Response): Promise<Response> => {
   const { userId } = req.user!;
-  const { name, password } = req.body;
+  const {
+    name,
+    phone,
+    birth_date,
+    genero,
+    qr,
+    password
+  } = req.body as Partial<User> & { password?: string };
 
-  if (!name && !password) {
+  if (!name && !phone && !birth_date && !genero && !qr && !password) {
     return res.status(400).json({ message: 'Debes proporcionar al menos un campo para actualizar' });
   }
 
@@ -70,8 +80,27 @@ export const updateMyProfile = async (req: Request, res: Response): Promise<Resp
     values.push(name);
   }
 
+  if (phone) {
+    updates.push('phone = ?');
+    values.push(phone);
+  }
+
+  if (birth_date) {
+    updates.push('birth_date = ?');
+    values.push(birth_date);
+  }
+
+  if (genero) {
+    updates.push('gender = ?');
+    values.push(genero);
+  }
+
+  if (qr) {
+    updates.push('qr = ?');
+    values.push(qr);
+  }
+
   if (password) {
-    const bcrypt = await import('bcryptjs');
     const hashedPassword = await bcrypt.hash(password, 10);
     updates.push('password = ?');
     values.push(hashedPassword);
@@ -80,7 +109,7 @@ export const updateMyProfile = async (req: Request, res: Response): Promise<Resp
   values.push(userId);
 
   const sql = `UPDATE users SET ${updates.join(', ')} WHERE id = ?`;
-  await pool.query(sql, values);
+  await pool.query<ResultSetHeader>(sql, values);
 
   return res.status(200).json({ message: 'Perfil actualizado correctamente' });
 };

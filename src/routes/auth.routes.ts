@@ -48,13 +48,24 @@ const router = express.Router();
  *               birth_date:
  *                 type: string
  *                 format: date
+ *                 description: Fecha de nacimiento (YYYY-MM-DD)
  *               phone:
  *                 type: string
  *               referral_code:
  *                 type: string
+ *               gender:
+ *                 type: string
+ *                 enum: [male, female, other]
+ *               qr:
+ *                 type: string
+ *                 description: Código QR único asociado al usuario (opcional)
  *     responses:
  *       201:
  *         description: Usuario registrado exitosamente
+ *       400:
+ *         description: Datos faltantes o inválidos
+ *       409:
+ *         description: El correo ya está registrado
  */
 router.post('/register', asyncHandler(registerUser));
 
@@ -81,6 +92,8 @@ router.post('/register', asyncHandler(registerUser));
  *     responses:
  *       200:
  *         description: Inicio de sesión exitoso
+ *       401:
+ *         description: Credenciales inválidas
  */
 router.post('/login', asyncHandler(loginUser));
 

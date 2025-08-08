@@ -3,12 +3,16 @@ export interface User {
   id?: number;
   name: string;
   email: string;
-  password: string;
-  role: 'buyer' | 'seller';
+  password?: string; // Opcional para evitar exponerla en respuestas
 
-  birth_date?: string;      // formato 'YYYY-MM-DD'
-  phone?: string;
-  referral_code?: string;
+  role: 'buyer' | 'seller' | 'admin';
+
+  birth_date?: string | null;        // formato 'YYYY-MM-DD'
+  phone?: string | null;
+  referral_code?: string | null;
+
+  genero?: 'masculino' | 'femenino' | 'otro' | null; // Nuevo campo
+  qr?: string | null;                                // Nuevo campo para código QR
 
   created_at?: Date;
 }
