@@ -11,7 +11,7 @@ export interface User {
   phone?: string | null;
   referral_code?: string | null;
 
-  genero?: 'masculino' | 'femenino' | 'otro' | null; // Nuevo campo
+  gender?: string | null; // Nuevo campo
   qr?: string | null;                                // Nuevo campo para código QR
 
   created_at?: Date;

@@ -23,6 +23,9 @@ const generateRefreshToken = (userId: number) => {
 
 // Registro de nuevo usuario
 export const registerUser = async (req: Request, res: Response): Promise<Response> => {
+
+  console.log(req.body);
+
   try {
     const {
       email,
@@ -32,9 +35,11 @@ export const registerUser = async (req: Request, res: Response): Promise<Respons
       birth_date,
       phone,
       referral_code,
-      genero,
+      gender,
       qr
     } = req.body as Partial<User>;
+
+    console.log(email, password, name, role, birth_date, phone, referral_code, gender, qr);
 
     if (!email || !password || !name || !role) {
       return res.status(400).json({ message: 'Faltan campos requeridos: email, password, name y role' });
@@ -63,7 +68,7 @@ export const registerUser = async (req: Request, res: Response): Promise<Respons
         birth_date || null,
         phone || null,
         referral_code || null,
-        genero || null,
+        gender ? gender : null,
         qr || null
       ]
     );
@@ -148,7 +153,7 @@ export const loginUser = async (req: Request, res: Response): Promise<Response> 
         birth_date: user.birth_date,
         phone: user.phone,
         referral_code: user.referral_code,
-        gender: user.genero,
+        gender: user.gender,
         qr: user.qr,
         membership_type
       }

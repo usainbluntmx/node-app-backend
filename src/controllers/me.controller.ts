@@ -46,7 +46,7 @@ export const getMyProfile = async (req: Request, res: Response): Promise<Respons
       birth_date: user.birth_date,
       phone: user.phone,
       referral_code: user.referral_code,
-      gender: user.genero,
+      gender: user.gender,
       qr: user.qr,
       created_at: user.created_at,
       membership_type
@@ -63,12 +63,12 @@ export const updateMyProfile = async (req: Request, res: Response): Promise<Resp
     name,
     phone,
     birth_date,
-    genero,
+    gender,
     qr,
     password
   } = req.body as Partial<User> & { password?: string };
 
-  if (!name && !phone && !birth_date && !genero && !qr && !password) {
+  if (!name && !phone && !birth_date && !gender && !qr && !password) {
     return res.status(400).json({ message: 'Debes proporcionar al menos un campo para actualizar' });
   }
 
@@ -90,9 +90,9 @@ export const updateMyProfile = async (req: Request, res: Response): Promise<Resp
     values.push(birth_date);
   }
 
-  if (genero) {
+  if (gender) {
     updates.push('gender = ?');
-    values.push(genero);
+    values.push(gender);
   }
 
   if (qr) {
