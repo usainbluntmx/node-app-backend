@@ -1,3 +1,4 @@
+// src/models/sisivoy_points.model.ts
 export interface SisiVoyPoints {
   id?: number;
   user_id: number;

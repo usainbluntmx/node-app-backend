@@ -1,3 +1,4 @@
+// src/routes/employee.routes.ts
 import { Router } from 'express';
 import {
   createEmployee,

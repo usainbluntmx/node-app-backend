@@ -1,94 +1,138 @@
 // src/config/swagger.ts
-import swaggerJSDoc from 'swagger-jsdoc';
+import { Express } from 'express';
+import swaggerUi from 'swagger-ui-express';
+import swaggerJsdoc from 'swagger-jsdoc'; // requiere esModuleInterop en tsconfig
+import { OpenAPIV3 } from 'openapi-types';
 
-const options = {
-  definition: {
-    openapi: '3.0.0',
-    info: {
-      title: 'API de Descuentos',
-      version: '1.0.0',
-      description: 'Documentación de la API para compradores y vendedores',
+/**
+ * Esquemas OpenAPI (tipados como OpenAPIV3.SchemaObject para conservar literales)
+ */
+const schemas: Record<string, OpenAPIV3.SchemaObject> = {
+  User: {
+    type: 'object',
+    properties: {
+      id: { type: 'integer', example: 1 },
+      name: { type: 'string', example: 'Juan Pérez' },
+      email: { type: 'string', example: 'juan@example.com' },
+      role: { type: 'string', enum: ['buyer', 'seller', 'admin'] },
+      created_at: { type: 'string', format: 'date-time', example: '2025-08-01T12:00:00Z' },
     },
-    servers: [
-      {
-        url: 'http://localhost:3000/api',
-        description: 'Servidor local',
-      },
-    ],
-    components: {
-      securitySchemes: {
-        bearerAuth: {
-          type: 'http',
-          scheme: 'bearer',
-          bearerFormat: 'JWT',
-        },
-      },
-      schemas: {
-        User: {
-          type: 'object',
-          properties: {
-            id: { type: 'integer', example: 1 },
-            name: { type: 'string', example: 'Juan Pérez' },
-            email: { type: 'string', example: 'user@example.com' },
-            role: { type: 'string', enum: ['buyer', 'seller'] },
-            created_at: { type: 'string', format: 'date-time' },
-          },
-        },
-        Brand: {
-          type: 'object',
-          properties: {
-            id: { type: 'integer', example: 1 },
-            name: { type: 'string', example: 'Mi Marca' },
-            description: { type: 'string', example: 'Tienda de productos orgánicos' },
-            logo_url: { type: 'string', example: 'https://example.com/logo.png' },
-            owner_id: { type: 'integer', example: 5 },
-          },
-        },
-        Branch: {
-          type: 'object',
-          properties: {
-            id: { type: 'integer', example: 10 },
-            name: { type: 'string', example: 'Sucursal Centro' },
-            address: { type: 'string', example: 'Calle Falsa 123' },
-            latitude: { type: 'number', example: 19.4326 },
-            longitude: { type: 'number', example: -99.1332 },
-            brand_id: { type: 'integer', example: 1 },
-          },
-        },
-        Discount: {
-          type: 'object',
-          required: ['brand_id', 'branch_id', 'type', 'title'],
-          properties: {
-            id: { type: 'integer', example: 100 },
-            brand_id: { type: 'integer', example: 1 },
-            branch_id: { type: 'integer', example: 10 },
-            type: {
-              type: 'string',
-              enum: ['product', 'service', 'amount', 'free'],
-              example: 'amount',
-            },
-            title: { type: 'string', example: '10% de descuento' },
-            description: { type: 'string', example: 'Solo válido en fin de semana' },
-            value: { type: 'number', example: 10 },
-            min_purchase: { type: 'number', example: 100 },
-            product_or_service_name: { type: 'string', example: 'Hamburguesa Clásica' },
-            qr_code: { type: 'string', example: 'data:image/png;base64,...' },
-            is_active: { type: 'boolean', example: true },
-            created_at: { type: 'string', format: 'date-time' },
-          },
-        },
-      },
-    },
-    security: [
-      {
-        bearerAuth: [],
-      },
-    ],
-    // ⚠️ Requerido por tipado estricto
-    paths: {},
+    required: ['id', 'name', 'email', 'role', 'created_at'],
   },
-  apis: ['src/routes/*.ts'],
+  Brand: {
+    type: 'object',
+    properties: {
+      id: { type: 'integer', example: 1 },
+      name: { type: 'string', example: 'Cafetería Central' },
+      business_type: { type: 'string', example: 'Restaurante' },
+      business_size: { type: 'string', example: 'PyME' },
+      website: { type: 'string', nullable: true, example: 'https://cafecentral.mx' },
+      social_links: { type: 'string', nullable: true, example: '[{"type":"twitter","url":"https://x.com/cafe"}]' },
+      created_at: { type: 'string', format: 'date-time' },
+    },
+    required: ['id', 'name'],
+  },
+  Branch: {
+    type: 'object',
+    properties: {
+      id: { type: 'integer', example: 10 },
+      brand_id: { type: 'integer', example: 1 },
+      name: { type: 'string', example: 'Sucursal Centro' },
+      address: { type: 'string', nullable: true, example: 'Av. Siempre Viva 123' },
+      latitude: { type: 'number', nullable: true, example: 19.4326 },
+      longitude: { type: 'number', nullable: true, example: -99.1332 },
+      services: { type: 'string', nullable: true, example: 'WiFi, Terraza' },
+      average_spend: { type: 'number', nullable: true, example: 150 },
+      website: { type: 'string', nullable: true, example: 'https://cafecentral.mx/centro' },
+      phone: { type: 'string', nullable: true, example: '+52 55 1234 5678' },
+      opening_hours: { type: 'string', nullable: true, example: 'Lun-Dom 9:00-21:00' },
+      images: { type: 'array', items: { type: 'string' }, nullable: true, example: ['https://.../1.jpg'] },
+      created_at: { type: 'string', format: 'date-time' },
+    },
+    required: ['id', 'brand_id', 'name'],
+  },
+  Discount: {
+    type: 'object',
+    properties: {
+      id: { type: 'integer', example: 100 },
+      brand_id: { type: 'integer', example: 1 },
+      branch_id: { type: 'integer', nullable: true, example: 10 },
+      title: { type: 'string', example: '2x1 en bebidas' },
+      type: { type: 'string', example: 'product|service|amount|free' },
+      description: { type: 'string', nullable: true, example: 'Válido de lunes a jueves' },
+      is_active: { type: 'boolean', example: true },
+      numero_de_usos: { type: 'integer', nullable: true, example: 50 },
+      created_at: { type: 'string', format: 'date-time' },
+    },
+    required: ['id', 'brand_id', 'title', 'is_active'],
+  },
 };
 
-const swaggerSpec = swaggerJSDoc(options);
-export default swaggerSpec;
+/**
+ * Documento base OpenAPI 3.0.0
+ * Tiparlo como OpenAPIV3.Document evita el error de schemas/NonArraySchemaObject.
+ */
+const definition: OpenAPIV3.Document = {
+  openapi: '3.0.0',
+  info: {
+    title: 'API de Descuentos',
+    version: '1.0.0',
+    description: 'Documentación de la API para la aplicación de descuentos móviles',
+  },
+  servers: [
+    {
+      url: 'http://localhost:3000/api',
+      description: 'Servidor de desarrollo local',
+    },
+  ],
+  components: {
+    securitySchemes: {
+      bearerAuth: {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+      },
+    },
+    schemas,
+  },
+  security: [{ bearerAuth: [] }],
+  paths: {}, // swagger-jsdoc lo completa con las anotaciones de las rutas
+};
+
+/**
+ * Tipo local minimalista para las opciones, compatible con cualquier versión de swagger-jsdoc.
+ */
+type JsDocOptions = {
+  definition: OpenAPIV3.Document;
+  apis: string[];
+};
+
+/**
+ * Opciones para swagger-jsdoc.
+ * Nota: si usas rutas fuera de src/routes, ajusta el patrón de globs.
+ */
+const options: JsDocOptions = {
+  definition,
+  apis: ['./src/routes/*.ts'],
+};
+
+/**
+ * Registra Swagger en la app Express.
+ */
+const swaggerDocs = (app: Express) => {
+  const specs = swaggerJsdoc(options as any); // `as any` por compatibilidad amplia entre versiones
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
+  console.log('Documentación Swagger disponible en http://localhost:3000/api-docs');
+};
+
+export default swaggerDocs;
+
+/**
+ * Si tu entorno NO tiene "esModuleInterop": true, usa esta importación alternativa:
+ *
+ * import * as swaggerJsdocNS from 'swagger-jsdoc';
+ * const swaggerDocs = (app: Express) => {
+ *   const specs = swaggerJsdocNS.default ? swaggerJsdocNS.default(options as any) : (swaggerJsdocNS as any)(options);
+ *   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
+ * };
+ */

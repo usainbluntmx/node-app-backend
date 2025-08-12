@@ -1,3 +1,4 @@
+// src/controllers/employee.controller.ts
 import { Request, Response } from 'express';
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
 import pool from '../config/db';
